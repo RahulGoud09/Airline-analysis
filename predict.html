@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airline Review Analysis - Result</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #e0f7ff 0%, #87CEEB 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 40px 0;
+        }
+        .container {
+            max-width: 600px;
+            animation: fadeIn 1s ease-out;
+            padding: 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(135, 206, 235, 0.3);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.85);
+            transform: translateY(0);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(135, 206, 235, 0.4);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #4FB5E6 0%, #87CEEB 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px !important;
+        }
+        .card-header h2 {
+            font-size: 1.5rem;
+            margin: 0;
+            font-weight: 600;
+        }
+        .review-text {
+            background: rgba(248, 249, 250, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #dee2e6;
+            text-align: left;
+            white-space: pre-wrap;
+            box-shadow: inset 0 2px 4px rgba(135, 206, 235, 0.1);
+        }
+        .sentiment-result, .key-points {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: transform 0.3s ease;
+        }
+        .sentiment-result:hover, .key-points:hover {
+            transform: translateY(-3px);
+        }
+        .positive {
+            background: linear-gradient(135deg, #4FB5E6 0%, #87CEEB 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(135, 206, 235, 0.3);
+        }
+        .neutral {
+            background: linear-gradient(135deg, #B0E0E6 0%, #ADD8E6 100%);
+            color: #856404;
+            box-shadow: 0 4px 15px rgba(176, 224, 230, 0.3);
+        }
+        .negative {
+            background: linear-gradient(135deg, #A9A9A9 0%, #D3D3D3 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(169, 169, 169, 0.3);
+        }
+        .btn-back {
+            background: linear-gradient(135deg, #4FB5E6 0%, #87CEEB 100%);
+            padding: 10px 30px;
+            font-size: 0.95rem;
+            border-radius: 50px;
+            text-decoration: none;
+            color: white;
+            display: inline-block;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 15px rgba(79, 181, 230, 0.3);
+        }
+        .btn-back:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #87CEEB 0%, #4FB5E6 100%);
+            color: white;
+            box-shadow: 0 6px 20px rgba(79, 181, 230, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        .btn-back:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 10px rgba(79, 181, 230, 0.3);
+        }
+        .btn-back .btn-icon {
+            display: inline-block;
+            margin-right: 8px;
+            transition: transform 0.3s ease;
+        }
+        .btn-back:hover .btn-icon {
+            transform: rotate(180deg);
+        }
+        .confidence-score {
+            font-size: 0.9rem;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+        .key-points {
+            text-align: left;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(248, 249, 250, 0.9);
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+            animation: fadeIn 0.5s ease-out 0.5s both;
+            transition: transform 0.3s ease;
+        }
+        .key-points:hover {
+            transform: translateY(-5px);
+        }
+        .key-points ul {
+            margin-bottom: 0;
+        }
+        .key-points li {
+            margin-bottom: 12px;
+            padding-left: 30px;
+            position: relative;
+            transition: transform 0.2s ease;
+        }
+        .key-points li:hover {
+            transform: translateX(5px);
+        }
+        .key-points li:before {
+            content: "✈️";
+            position: absolute;
+            left: 0;
+            font-size: 1.2em;
+        }
+        .error-alert {
+            background: linear-gradient(135deg, #ff4d4d 0%, #dc3545 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        .floating-shapes {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 20s infinite linear;
+            border-radius: 50%;
+        }
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-100vh) rotate(360deg); }
+        }
+        .cloud {
+            position: absolute;
+            width: 100px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            animation: floatCloud 30s infinite linear;
+            opacity: 0.7;
+        }
+        .cloud:before,
+        .cloud:after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+        }
+        .cloud:before {
+            width: 50px;
+            height: 50px;
+            top: -20px;
+            left: 15px;
+        }
+        .cloud:after {
+            width: 30px;
+            height: 30px;
+            top: -10px;
+            left: 45px;
+        }
+        @keyframes floatCloud {
+            0% { transform: translateX(-200px); }
+            100% { transform: translateX(calc(100vw + 200px)); }
+        }
+        .sentiment-emoji {
+            font-size: 1.3rem;
+            display: block;
+            margin-top: 5px;
+            animation: bounce 1s ease infinite;
+        }
+        .key-point-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: transform 0.3s ease;
+        }
+        .key-point-item:hover {
+            transform: translateX(10px);
+            background: rgba(255, 255, 255, 0.7);
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .positive .sentiment-emoji {
+            text-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+        }
+        .neutral .sentiment-emoji {
+            text-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+        }
+        .negative .sentiment-emoji {
+            text-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-shapes">
+        <div class="cloud" style="top: 20%; animation-delay: 0s;"></div>
+        <div class="cloud" style="top: 40%; animation-delay: 10s;"></div>
+        <div class="cloud" style="top: 60%; animation-delay: 5s;"></div>
+        <div class="cloud" style="top: 80%; animation-delay: 15s;"></div>
+        <div class="shape" style="left: 10%; width: 50px; height: 50px; animation-delay: 0s;"></div>
+        <div class="shape" style="left: 30%; width: 70px; height: 70px; animation-delay: 2s;"></div>
+        <div class="shape" style="left: 50%; width: 40px; height: 40px; animation-delay: 4s;"></div>
+        <div class="shape" style="left: 70%; width: 60px; height: 60px; animation-delay: 6s;"></div>
+        <div class="shape" style="left: 90%; width: 45px; height: 45px; animation-delay: 8s;"></div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header text-center">
+                <h2>✈️ Analysis Result</h2>
+            </div>
+            <div class="card-body p-4">
+                {% if error %}
+                    <div class="error-alert text-center animate__animated animate__shakeX">
+                        ⚠️ {{ error }}
+                    </div>
+                {% else %}
+                    <h4 class="text-center mb-4 animate__animated animate__fadeIn">Review Analysis</h4>
+                    
+                    <div class="review-text animate__animated animate__fadeIn">
+                        💬 {{ review_text }}
+                    </div>
+
+                    <div class="sentiment-result {{ sentiment_class }} text-center animate__animated animate__fadeIn">
+                        <strong>Sentiment:</strong> 
+                        {% if sentiment == "Positive" %}
+                            <span class="sentiment-emoji">🌟 {{ sentiment }} 😊</span>
+                        {% elif sentiment == "Neutral" %}
+                            <span class="sentiment-emoji">✨ {{ sentiment }} 😐</span>
+                        {% else %}
+                            <span class="sentiment-emoji">⚡ {{ sentiment }} 😞</span>
+                        {% endif %}
+                        {% if confidence_score %}
+                        <div class="confidence-score">
+                            🎯 Confidence: {{ confidence_score }}%
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if key_points %}
+                    <div class="key-points animate__animated animate__fadeIn">
+                        <h5>🔍 Key Points Identified:</h5>
+                        <ul class="list-unstyled">
+                            {% for point in key_points %}
+                            <li class="animate__animated animate__fadeIn key-point-item" style="animation-delay: {{ loop.index * 0.1 }}s">
+                                {% if 'service' in point.lower() %}
+                                    👨‍✈️ 
+                                {% elif 'food' in point.lower() %}
+                                    🍽️ 
+                                {% elif 'seat' in point.lower() %}
+                                    💺 
+                                {% elif 'staff' in point.lower() or 'crew' in point.lower() %}
+                                    👥 
+                                {% else %}
+                                    ✈️ 
+                                {% endif %}
+                                {{ point }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                <div class="text-center">
+                    <a href="/" class="btn-back animate__animated animate__fadeIn">
+                        <span class="btn-icon">🔄</span>
+                        Analyze Another Review
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

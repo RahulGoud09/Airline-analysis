@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airline Review Sentiment Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background: linear-gradient(135deg, #e0f7ff 0%, #87CEEB 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        .container {
+            max-width: 600px;
+            animation: fadeIn 1s ease-out;
+            padding: 20px;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(135, 206, 235, 0.3);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.85);
+            transform: translateY(0);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(135, 206, 235, 0.4);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #4FB5E6 0%, #87CEEB 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px !important;
+        }
+        .card-header h2 {
+            margin: 0;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.5s ease-out;
+            font-size: 1.5rem;
+        }
+        textarea {
+            resize: none;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            min-height: 120px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        textarea:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+            transform: translateY(-2px);
+        }
+        .btn-analyze {
+            background: linear-gradient(135deg, #0d6efd 0%, #0099ff 100%);
+            color: white;
+            padding: 10px 30px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+            font-size: 0.95rem;
+        }
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(13, 110, 253, 0.4);
+            background: linear-gradient(135deg, #0099ff 0%, #0d6efd 100%);
+        }
+        .error-message {
+            display: none;
+            color: #dc3545;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        .form-label {
+            color: #495057;
+            font-weight: 500;
+            margin-bottom: 8px;
+            animation: fadeIn 0.5s ease-out;
+            font-size: 0.95rem;
+        }
+        .floating-shapes {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.4);
+            animation: float 20s infinite linear;
+            border-radius: 50%;
+        }
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-100vh) rotate(360deg); }
+        }
+        .airline-select-container {
+            margin-bottom: 0;
+            position: relative;
+            animation: fadeIn 0.5s ease-out 0.2s both;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .select2-container--default .select2-selection--single {
+            height: 45px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+        
+        .select2-container--default .select2-selection--single:hover {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 43px;
+            padding-left: 20px;
+            color: #495057;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 43px;
+            right: 10px;
+        }
+        
+        .select2-dropdown {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Style for optgroups */
+        .select2-container--default .select2-results__group {
+            padding: 8px;
+            background: rgba(135, 206, 235, 0.1);
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Style for options */
+        .select2-container--default .select2-results__option {
+            padding: 8px 12px;
+            transition: all 0.2s ease;
+        }
+        
+        .select2-container--default .select2-results__option:hover {
+            background-color: rgba(135, 206, 235, 0.1);
+        }
+        
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background: linear-gradient(135deg, #4FB5E6 0%, #87CEEB 100%);
+            color: white;
+        }
+        
+        .select2-search__field {
+            border-radius: 5px !important;
+            padding: 8px !important;
+        }
+        
+        .airline-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        .form-section {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(5px);
+            transition: transform 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .form-section:hover {
+            transform: translateY(-3px);
+        }
+        .cloud {
+            position: absolute;
+            width: 100px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            animation: floatCloud 30s infinite linear;
+            opacity: 0.7;
+        }
+        .cloud:before,
+        .cloud:after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+        }
+        .cloud:before {
+            width: 50px;
+            height: 50px;
+            top: -20px;
+            left: 15px;
+        }
+        .cloud:after {
+            width: 30px;
+            height: 30px;
+            top: -10px;
+            left: 45px;
+        }
+        @keyframes floatCloud {
+            0% { transform: translateX(-200px); }
+            100% { transform: translateX(calc(100vw + 200px)); }
+        }
+        .review-box {
+            margin-top: 15px;
+        }
+        .card-body {
+            padding: 1.5rem !important;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-label {
+            margin-bottom: 8px !important;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-shapes">
+        <div class="cloud" style="top: 20%; animation-delay: 0s;"></div>
+        <div class="cloud" style="top: 40%; animation-delay: 10s;"></div>
+        <div class="cloud" style="top: 60%; animation-delay: 5s;"></div>
+        <div class="cloud" style="top: 80%; animation-delay: 15s;"></div>
+        <div class="shape" style="left: 10%; width: 50px; height: 50px; animation-delay: 0s;"></div>
+        <div class="shape" style="left: 30%; width: 70px; height: 70px; animation-delay: 2s;"></div>
+        <div class="shape" style="left: 50%; width: 40px; height: 40px; animation-delay: 4s;"></div>
+        <div class="shape" style="left: 70%; width: 60px; height: 60px; animation-delay: 6s;"></div>
+        <div class="shape" style="left: 90%; width: 45px; height: 45px; animation-delay: 8s;"></div>
+    </div>
+
+    <div class="container">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header text-center">
+                <h2 class="animate__animated animate__slideInDown">✈️ Airline Review Analysis</h2>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('predict') }}" method="POST" onsubmit="return validateForm()">
+                    <div class="form-section">
+                        <div class="form-group">
+                            <label for="airline" class="form-label">
+                                <i class="fas fa-plane"></i> Select Airline
+                            </label>
+                            <div class="airline-select-container">
+                                <select id="airline" name="airline" class="form-control">
+                                    <option value="">Choose your airline...</option>
+                                    <!-- Asia Pacific -->
+                                    <optgroup label="Asia Pacific">
+                                        <option value="singapore-airlines" data-icon="🇸🇬">Singapore Airlines</option>
+                                        <option value="cathay-pacific" data-icon="🇭🇰">Cathay Pacific</option>
+                                        <option value="japan-airlines" data-icon="🇯🇵">Japan Airlines</option>
+                                        <option value="ana" data-icon="🇯🇵">All Nippon Airways</option>
+                                        <option value="korean-air" data-icon="🇰🇷">Korean Air</option>
+                                        <option value="qantas" data-icon="🇦🇺">Qantas</option>
+                                        <option value="air-new-zealand" data-icon="🇳🇿">Air New Zealand</option>
+                                        <option value="thai-airways" data-icon="🇹🇭">Thai Airways</option>
+                                        <option value="malaysia-airlines" data-icon="🇲🇾">Malaysia Airlines</option>
+                                        <option value="garuda-indonesia" data-icon="🇮🇩">Garuda Indonesia</option>
+                                    </optgroup>
+                                    
+                                    <!-- Indian Airlines -->
+                                    <optgroup label="Indian Airlines">
+                                        <option value="air-india" data-icon="🇮🇳">Air India</option>
+                                        <option value="indigo" data-icon="🇮🇳">IndiGo</option>
+                                        <option value="vistara" data-icon="🇮🇳">Vistara</option>
+                                        <option value="spicejet" data-icon="🇮🇳">SpiceJet</option>
+                                        <option value="air-india-express" data-icon="🇮🇳">Air India Express</option>
+                                        <option value="go-first" data-icon="🇮🇳">Go First</option>
+                                        <option value="akasa-air" data-icon="🇮🇳">Akasa Air</option>
+                                        <option value="alliance-air" data-icon="🇮🇳">Alliance Air</option>
+                                    </optgroup>
+                                    
+                                    <!-- Middle East -->
+                                    <optgroup label="Middle East">
+                                        <option value="emirates" data-icon="🇦🇪">Emirates</option>
+                                        <option value="qatar-airways" data-icon="🇶🇦">Qatar Airways</option>
+                                        <option value="etihad" data-icon="🇦🇪">Etihad Airways</option>
+                                        <option value="turkish-airlines" data-icon="🇹🇷">Turkish Airlines</option>
+                                        <option value="saudia" data-icon="🇸🇦">Saudia</option>
+                                    </optgroup>
+                                    
+                                    <!-- Europe -->
+                                    <optgroup label="Europe">
+                                        <option value="lufthansa" data-icon="🇩🇪">Lufthansa</option>
+                                        <option value="british-airways" data-icon="🇬🇧">British Airways</option>
+                                        <option value="air-france" data-icon="🇫🇷">Air France</option>
+                                        <option value="klm" data-icon="🇳🇱">KLM Royal Dutch Airlines</option>
+                                        <option value="swiss" data-icon="🇨🇭">SWISS</option>
+                                        <option value="sas" data-icon="🇸🇪">Scandinavian Airlines</option>
+                                        <option value="finnair" data-icon="🇫🇮">Finnair</option>
+                                        <option value="iberia" data-icon="🇪🇸">Iberia</option>
+                                        <option value="aer-lingus" data-icon="🇮🇪">Aer Lingus</option>
+                                        <option value="lot" data-icon="🇵🇱">LOT Polish Airlines</option>
+                                    </optgroup>
+                                    
+                                    <!-- Americas -->
+                                    <optgroup label="Americas">
+                                        <option value="american-airlines" data-icon="🇺🇸">American Airlines</option>
+                                        <option value="united-airlines" data-icon="🇺🇸">United Airlines</option>
+                                        <option value="delta-airlines" data-icon="🇺🇸">Delta Air Lines</option>
+                                        <option value="air-canada" data-icon="🇨🇦">Air Canada</option>
+                                        <option value="westjet" data-icon="🇨🇦">WestJet</option>
+                                        <option value="aeromexico" data-icon="🇲🇽">Aeroméxico</option>
+                                        <option value="latam" data-icon="🇧🇷">LATAM Airlines</option>
+                                        <option value="avianca" data-icon="🇴🇨">Avianca</option>
+                                    </optgroup>
+                                    
+                                    <!-- Other -->
+                                    <optgroup label="Other">
+                                        <option value="other" data-icon="✈️">Other Airlines</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section review-box">
+                        <div class="form-group">
+                            <label for="review" class="form-label">
+                                <i class="fas fa-comment"></i> Your Review
+                            </label>
+                            <textarea 
+                                id="review" 
+                                name="review"
+                                class="form-control" 
+                                rows="4" 
+                                placeholder="Share your experience..."
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <button type="submit" class="btn btn-analyze animate__animated animate__pulse">
+                            <i class="fas fa-search"></i> Analyze Review
+                        </button>
+                    </div>
+                    <div id="error-message" class="error-message text-center"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://kit.fontawesome.com/your-font-awesome-kit.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#airline').select2({
+                placeholder: "Select an airline...",
+                allowClear: true,
+                templateResult: formatAirline,
+                templateSelection: formatAirline
+            });
+        });
+
+        function formatAirline(airline) {
+            if (!airline.id) {
+                return airline.text;
+            }
+            
+            const icon = $(airline.element).data('icon');
+            return $(`<span><span class="airline-icon">${icon}</span> ${airline.text}</span>`);
+        }
+
+        function validateForm() {
+            const review = document.getElementById('review').value.trim();
+            const airline = document.getElementById('airline').value;
+            const errorMessage = document.getElementById('error-message');
+            
+            if (!airline) {
+                errorMessage.textContent = 'Please select an airline.';
+                errorMessage.style.display = 'block';
+                errorMessage.className = 'error-message text-center animate__animated animate__shakeX';
+                return false;
+            }
+            
+            if (!review) {
+                errorMessage.textContent = 'Please enter a review before submitting.';
+                errorMessage.style.display = 'block';
+                errorMessage.className = 'error-message text-center animate__animated animate__shakeX';
+                return false;
+            }
+            
+            if (review.length < 10) {
+                errorMessage.textContent = 'Please enter a longer review (minimum 10 characters).';
+                errorMessage.style.display = 'block';
+                errorMessage.className = 'error-message text-center animate__animated animate__shakeX';
+                return false;
+            }
+            
+            return true;
+        }
+    </script>
+</body>
+</html>
